@@ -1,0 +1,17 @@
+{
+  "name": "web-kernel",
+  "version": "1.0.0",
+  "description": "A kernel for web to handle scripting",
+  "main": "dist/index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "laravel-mix": "^6.0.49"
+  }
+}
