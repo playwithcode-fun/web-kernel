@@ -4,3 +4,6 @@ export interface IKernelProgram {
 export type IEventMap = Record<string, any>;
 export type IEventHandler<T = unknown> = (event: Event) => void;
 export type IUnsubscribeEvent = () => void;
+export interface IKernelRequest {
+    [key: string]: any;
+}
