@@ -83,6 +83,47 @@ class ProgramHandler {
 
 /***/ },
 
+/***/ "./src/RequestHandler.ts"
+/*!*******************************!*\
+  !*** ./src/RequestHandler.ts ***!
+  \*******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _request_adapters__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./request/adapters */ "./src/request/adapters.ts");
+/* harmony import */ var _request_Request__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./request/Request */ "./src/request/Request.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+
+
+
+class RequestHandler {
+  constructor() {
+    this.requests = {};
+  }
+  addRequest(key, RequestClass) {
+    const instance = new RequestClass(_request_adapters__WEBPACK_IMPORTED_MODULE_0__.fetchAdapter);
+    if (!(instance instanceof _request_Request__WEBPACK_IMPORTED_MODULE_1__["default"])) {
+      throw new Error(`Invalid request "${key}". It must extend kernel Request class.`);
+    }
+    this.requests[key] = instance;
+  }
+  startRequest(key) {
+    if (!this.requests[key]) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_2__.logger)(_utils__WEBPACK_IMPORTED_MODULE_2__.LoggerLevel.WARNING, "Request not found.");
+    }
+    if (typeof this.requests[key].send !== "function") {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_2__.logger)(_utils__WEBPACK_IMPORTED_MODULE_2__.LoggerLevel.ERROR, "Send method not available for the request.");
+    }
+    this.requests[key].send();
+  }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (RequestHandler);
+
+/***/ },
+
 /***/ "./src/kernel.ts"
 /*!***********************!*\
   !*** ./src/kernel.ts ***!
@@ -95,12 +136,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _ProgramHandler__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ProgramHandler */ "./src/ProgramHandler.ts");
 /* harmony import */ var _KernelEvents__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./KernelEvents */ "./src/KernelEvents.ts");
+/* harmony import */ var _RequestHandler__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./RequestHandler */ "./src/RequestHandler.ts");
+
 
 
 class Kernel {
   constructor() {
     this.programHandler = new _ProgramHandler__WEBPACK_IMPORTED_MODULE_0__["default"]();
     this.eventHandler = new _KernelEvents__WEBPACK_IMPORTED_MODULE_1__["default"]();
+    this.requestHandler = new _RequestHandler__WEBPACK_IMPORTED_MODULE_2__["default"]();
   }
   registerPrograms(programs) {
     if (Object.keys(programs).length) {
@@ -124,8 +168,153 @@ class Kernel {
   once(type, handler) {
     this.eventHandler.once(type, handler);
   }
+  registerRequests(requests) {
+    if (Object.keys(requests).length) {
+      Object.keys(requests).forEach(key => {
+        this.requestHandler.addRequest(key, requests[key]);
+      });
+    }
+  }
+  send(key) {
+    this.requestHandler.startRequest(key);
+  }
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Kernel);
+
+/***/ },
+
+/***/ "./src/request/DataTransformer.ts"
+/*!****************************************!*\
+  !*** ./src/request/DataTransformer.ts ***!
+  \****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+class DataTransformer {
+  async transform(response) {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return await response.json();
+    }
+    if (contentType.includes("text/")) {
+      return await response.text();
+    }
+    return await response.blob();
+  }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (DataTransformer);
+
+/***/ },
+
+/***/ "./src/request/Request.ts"
+/*!********************************!*\
+  !*** ./src/request/Request.ts ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _adapters__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./adapters */ "./src/request/adapters.ts");
+/* harmony import */ var _DataTransformer__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./DataTransformer */ "./src/request/DataTransformer.ts");
+/* harmony import */ var _interfaces__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./interfaces */ "./src/request/interfaces.ts");
+
+
+
+class Request {
+  constructor(adapter, transformer) {
+    if (new.target === Request) {
+      throw new Error("Request is abstract");
+    }
+    this.adapter = adapter ?? _adapters__WEBPACK_IMPORTED_MODULE_0__.fetchAdapter;
+    this.transformer = transformer ?? new _DataTransformer__WEBPACK_IMPORTED_MODULE_1__["default"]();
+  }
+  get method() {
+    return _interfaces__WEBPACK_IMPORTED_MODULE_2__.RequestMethods.GET;
+  }
+  get headers() {
+    return undefined;
+  }
+  get payload() {
+    return null;
+  }
+  get signal() {
+    return undefined;
+  }
+  async send() {
+    try {
+      this.onProcessing();
+      const response = await this.adapter({
+        url: this.url,
+        method: this.method,
+        headers: this.headers,
+        body: this.payload,
+        signal: this.signal
+      });
+      if (!response.ok) {
+        throw response;
+      }
+      const data = await this.transformer.transform(response);
+      this.onSuccess(data);
+      return data;
+    } catch (error) {
+      this.onError(error);
+      throw error;
+    }
+  }
+  onProcessing() {}
+  onSuccess(_response) {}
+  onError(_error) {}
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Request);
+
+/***/ },
+
+/***/ "./src/request/adapters.ts"
+/*!*********************************!*\
+  !*** ./src/request/adapters.ts ***!
+  \*********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   fetchAdapter: () => (/* binding */ fetchAdapter)
+/* harmony export */ });
+/* harmony import */ var _interfaces__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./interfaces */ "./src/request/interfaces.ts");
+
+function fetchAdapter(config) {
+  return fetch(config.url, {
+    method: config.method || _interfaces__WEBPACK_IMPORTED_MODULE_0__.RequestMethods.GET,
+    headers: config.headers,
+    body: config.body ?? null,
+    signal: config.signal
+  });
+}
+
+/***/ },
+
+/***/ "./src/request/interfaces.ts"
+/*!***********************************!*\
+  !*** ./src/request/interfaces.ts ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RequestMethods: () => (/* binding */ RequestMethods)
+/* harmony export */ });
+var RequestMethods;
+(function (RequestMethods) {
+  RequestMethods["GET"] = "GET";
+  RequestMethods["POST"] = "POST";
+  RequestMethods["PUT"] = "PUT";
+  RequestMethods["PATCH"] = "PATCH";
+  RequestMethods["DELETE"] = "DELETE";
+})(RequestMethods || (RequestMethods = {}));
 
 /***/ },
 
@@ -229,10 +418,13 @@ var __webpack_exports__ = {};
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Kernel: () => (/* reexport safe */ _kernel__WEBPACK_IMPORTED_MODULE_0__["default"]),
-/* harmony export */   LoggerLevel: () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel)
+/* harmony export */   LoggerLevel: () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_2__.LoggerLevel),
+/* harmony export */   Request: () => (/* reexport safe */ _request_Request__WEBPACK_IMPORTED_MODULE_1__["default"])
 /* harmony export */ });
 /* harmony import */ var _kernel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./kernel */ "./src/kernel.ts");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+/* harmony import */ var _request_Request__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./request/Request */ "./src/request/Request.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+
 
 
 
@@ -240,4 +432,5 @@ __webpack_require__.r(__webpack_exports__);
 
 const __webpack_exports__Kernel = __webpack_exports__.Kernel;
 const __webpack_exports__LoggerLevel = __webpack_exports__.LoggerLevel;
-export { __webpack_exports__Kernel as Kernel, __webpack_exports__LoggerLevel as LoggerLevel };
+const __webpack_exports__Request = __webpack_exports__.Request;
+export { __webpack_exports__Kernel as Kernel, __webpack_exports__LoggerLevel as LoggerLevel, __webpack_exports__Request as Request };
