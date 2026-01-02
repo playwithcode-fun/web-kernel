@@ -135,16 +135,38 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _ProgramHandler__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ProgramHandler */ "./src/ProgramHandler.ts");
-/* harmony import */ var _KernelEvents__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./KernelEvents */ "./src/KernelEvents.ts");
-/* harmony import */ var _RequestHandler__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./RequestHandler */ "./src/RequestHandler.ts");
+/* harmony import */ var _types_IKernel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./types/IKernel */ "./src/types/IKernel.ts");
+/* harmony import */ var _KernelEvents__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./KernelEvents */ "./src/KernelEvents.ts");
+/* harmony import */ var _RequestHandler__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestHandler */ "./src/RequestHandler.ts");
+
 
 
 
 class Kernel {
   constructor() {
     this.programHandler = new _ProgramHandler__WEBPACK_IMPORTED_MODULE_0__["default"]();
-    this.eventHandler = new _KernelEvents__WEBPACK_IMPORTED_MODULE_1__["default"]();
-    this.requestHandler = new _RequestHandler__WEBPACK_IMPORTED_MODULE_2__["default"]();
+    this.eventHandler = new _KernelEvents__WEBPACK_IMPORTED_MODULE_2__["default"]();
+    this.requestHandler = new _RequestHandler__WEBPACK_IMPORTED_MODULE_3__["default"]();
+    this.state = _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.CREATED;
+    this.bootHandlers = [];
+  }
+  onBoot(callback) {
+    if (this.state == _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.BOOTED) {
+      callback(this);
+      return;
+    }
+    this.bootHandlers.push(callback);
+  }
+  boot() {
+    if (this.state !== _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.CREATED) {
+      return;
+    }
+    this.state = _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.BOOTING;
+    for (const handler of this.bootHandlers) {
+      handler(this);
+    }
+    this.bootHandlers.length = 0;
+    this.state = _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.BOOTED;
   }
   registerPrograms(programs) {
     if (Object.keys(programs).length) {
@@ -315,6 +337,25 @@ var RequestMethods;
   RequestMethods["PATCH"] = "PATCH";
   RequestMethods["DELETE"] = "DELETE";
 })(RequestMethods || (RequestMethods = {}));
+
+/***/ },
+
+/***/ "./src/types/IKernel.ts"
+/*!******************************!*\
+  !*** ./src/types/IKernel.ts ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   KernelState: () => (/* binding */ KernelState)
+/* harmony export */ });
+var KernelState;
+(function (KernelState) {
+  KernelState["CREATED"] = "CREATED";
+  KernelState["BOOTING"] = "BOOTING";
+  KernelState["BOOTED"] = "BOOTED";
+})(KernelState || (KernelState = {}));
 
 /***/ },
 

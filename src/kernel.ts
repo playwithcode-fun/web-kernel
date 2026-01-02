@@ -1,5 +1,5 @@
 import ProgramHandler from "./ProgramHandler";
-import { IKernelProgram, IEventMap, IEventHandler, IUnsubscribeEvent, IKernelRequest } from "./types/IKernel";
+import { IKernelProgram, IEventMap, IEventHandler, IUnsubscribeEvent, IKernelRequest, KernelState } from "./types/IKernel";
 import KernelEvents from "./KernelEvents";
 import RequestHandler from "./RequestHandler";
 
@@ -7,11 +7,39 @@ class Kernel {
     programHandler;
     eventHandler;
     requestHandler;
+    state: KernelState;
+    bootHandlers: any[];
     
     constructor() {
         this.programHandler = new ProgramHandler();
         this.eventHandler = new KernelEvents();
         this.requestHandler = new RequestHandler();
+        this.state = KernelState.CREATED;
+        this.bootHandlers = [];
+    }
+
+    onBoot(callback: any) {
+        if(this.state == KernelState.BOOTED) {
+            callback(this);
+            return;
+        }
+
+        this.bootHandlers.push(callback);
+    }
+
+    boot() {
+        if(this.state !== KernelState.CREATED) {
+            return;
+        }
+
+        this.state = KernelState.BOOTING;
+
+        for(const handler of this.bootHandlers) {
+            handler(this);
+        }
+
+        this.bootHandlers.length = 0;
+        this.state = KernelState.BOOTED;
     }
 
     registerPrograms(programs: IKernelProgram) {

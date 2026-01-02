@@ -7,3 +7,8 @@ export type IUnsubscribeEvent = () => void;
 export interface IKernelRequest {
     [key: string]: any;
 }
+export declare enum KernelState {
+    CREATED = "CREATED",
+    BOOTING = "BOOTING",
+    BOOTED = "BOOTED"
+}

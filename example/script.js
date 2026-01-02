@@ -8,9 +8,15 @@ window.kernel = new Kernel();
 // Programs
 registerPrograms(window.kernel);
 
-window.kernel.start("my-program", {
-    message: "Message is registered."
-});
+window.kernel.onBoot((k) => {
+    k.start("my-program", {
+        message: "Kernel is booted.",
+    });
+})
+
+// window.kernel.start("my-program", {
+//     message: "Message is registered."
+// });
 
 document.getElementById("link-button").addEventListener("click", () => window.kernel.destroy("my-program"));
 
@@ -33,4 +39,8 @@ registerRequests(window.kernel);
 
 document.getElementById("trail-button").addEventListener("click", () => {
     window.kernel.send("getposts");
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    window.kernel.boot();
 });
