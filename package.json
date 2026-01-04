@@ -26,7 +26,6 @@
         "opensource",
         "webjs"
     ],
-    "private": "false",
     "author": "",
     "license": "MIT",
     "devDependencies": {
