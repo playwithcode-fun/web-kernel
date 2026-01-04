@@ -46,37 +46,80 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+/* harmony import */ var _types_IKernel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./types/IKernel */ "./src/types/IKernel.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+
 
 class ProgramHandler {
   constructor() {
-    this.programs = {};
+    this.programs = new Map();
+    this.programState = new Map();
     //
   }
   addProgram(key, program) {
-    this.programs[key] = new program();
+    if (this.programs.has(key)) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.WARNING, `Program ${key} already exists.`);
+      return;
+    }
+    this.programs.set(key, new program());
+    this.programState.set(key, _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.IDLE);
   }
-  startProgram(key) {
-    if (!this.programs[key]) {
-      (0,_utils__WEBPACK_IMPORTED_MODULE_0__.logger)(_utils__WEBPACK_IMPORTED_MODULE_0__.LoggerLevel.WARNING, "Program not found.");
+  startProgram(key, args = null) {
+    const program = this.programs.get(key);
+    if (!program) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.WARNING, `Program ${key} not found.`);
       return;
     }
-    if (typeof this.programs[key].onStart !== "function") {
-      (0,_utils__WEBPACK_IMPORTED_MODULE_0__.logger)(_utils__WEBPACK_IMPORTED_MODULE_0__.LoggerLevel.ERROR, "onStart method is not defined in the program.");
+    const status = this.programState.get(key);
+    if (status === _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.RUNNING) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.WARNING, `Program ${key} is already running.`);
       return;
     }
-    this.programs[key].onStart();
+    if (typeof program.onStart !== "function") {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.ERROR, `onStart method is not defined in the program ${key}.`);
+      return;
+    }
+    try {
+      program.onStart(args);
+      this.programState.set(key, _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.RUNNING);
+    } catch (error) {
+      this.programState.set(key, _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.ERROR);
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.ERROR, `Error occured in program ${key} - `, error);
+    }
   }
   endProgram(key) {
-    if (!this.programs[key]) {
-      (0,_utils__WEBPACK_IMPORTED_MODULE_0__.logger)(_utils__WEBPACK_IMPORTED_MODULE_0__.LoggerLevel.WARNING, "Program not found.");
+    const program = this.programs.get(key);
+    if (!program) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.WARNING, `Program ${key} not found.`);
       return;
     }
-    if (typeof this.programs[key].onDestroy !== "function") {
-      (0,_utils__WEBPACK_IMPORTED_MODULE_0__.logger)(_utils__WEBPACK_IMPORTED_MODULE_0__.LoggerLevel.ERROR, "onDestroy method is not defined in the program.");
+    if (this.programState.get(key) !== _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.RUNNING) {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.WARNING, `Program ${key} is not running.`);
       return;
     }
-    this.programs[key].onDestroy();
+    if (typeof program.onDestroy !== "function") {
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.ERROR, `onDestroy method is not defined in the program ${key}.`);
+      return;
+    }
+    try {
+      program.onDestroy();
+      this.programState.set(key, _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.STOPPED);
+    } catch (error) {
+      this.programState.set(key, _types_IKernel__WEBPACK_IMPORTED_MODULE_0__.ProgramState.ERROR);
+      (0,_utils__WEBPACK_IMPORTED_MODULE_1__.logger)(_utils__WEBPACK_IMPORTED_MODULE_1__.LoggerLevel.ERROR, `Error occured in program ${key} - `, error);
+    }
+  }
+  getProgramsByState(programState) {
+    const status = {};
+    for (const [key, state] of this.programState) {
+      if (state === programState) {
+        status[key] = state;
+      }
+    }
+    return status;
+  }
+  getAllProgramStatus() {
+    return this.programState;
   }
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (ProgramHandler);
@@ -135,16 +178,38 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _ProgramHandler__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ProgramHandler */ "./src/ProgramHandler.ts");
-/* harmony import */ var _KernelEvents__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./KernelEvents */ "./src/KernelEvents.ts");
-/* harmony import */ var _RequestHandler__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./RequestHandler */ "./src/RequestHandler.ts");
+/* harmony import */ var _types_IKernel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./types/IKernel */ "./src/types/IKernel.ts");
+/* harmony import */ var _KernelEvents__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./KernelEvents */ "./src/KernelEvents.ts");
+/* harmony import */ var _RequestHandler__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestHandler */ "./src/RequestHandler.ts");
+
 
 
 
 class Kernel {
   constructor() {
     this.programHandler = new _ProgramHandler__WEBPACK_IMPORTED_MODULE_0__["default"]();
-    this.eventHandler = new _KernelEvents__WEBPACK_IMPORTED_MODULE_1__["default"]();
-    this.requestHandler = new _RequestHandler__WEBPACK_IMPORTED_MODULE_2__["default"]();
+    this.eventHandler = new _KernelEvents__WEBPACK_IMPORTED_MODULE_2__["default"]();
+    this.requestHandler = new _RequestHandler__WEBPACK_IMPORTED_MODULE_3__["default"]();
+    this.state = _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.CREATED;
+    this.bootHandlers = [];
+  }
+  onBoot(callback) {
+    if (this.state == _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.BOOTED) {
+      callback(this);
+      return;
+    }
+    this.bootHandlers.push(callback);
+  }
+  boot() {
+    if (this.state !== _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.CREATED) {
+      return;
+    }
+    this.state = _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.BOOTING;
+    for (const handler of this.bootHandlers) {
+      handler(this);
+    }
+    this.bootHandlers.length = 0;
+    this.state = _types_IKernel__WEBPACK_IMPORTED_MODULE_1__.KernelState.BOOTED;
   }
   registerPrograms(programs) {
     if (Object.keys(programs).length) {
@@ -153,8 +218,8 @@ class Kernel {
       });
     }
   }
-  start(programName) {
-    this.programHandler.startProgram(programName);
+  start(programName, args = null) {
+    this.programHandler.startProgram(programName, args);
   }
   destroy(programName) {
     this.programHandler.endProgram(programName);
@@ -177,6 +242,11 @@ class Kernel {
   }
   send(key) {
     this.requestHandler.startRequest(key);
+  }
+  metrics() {
+    const data = {};
+    data["programs"] = this.programHandler.getAllProgramStatus();
+    console.log(data);
   }
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Kernel);
@@ -318,6 +388,33 @@ var RequestMethods;
 
 /***/ },
 
+/***/ "./src/types/IKernel.ts"
+/*!******************************!*\
+  !*** ./src/types/IKernel.ts ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   KernelState: () => (/* binding */ KernelState),
+/* harmony export */   ProgramState: () => (/* binding */ ProgramState)
+/* harmony export */ });
+var KernelState;
+(function (KernelState) {
+  KernelState["CREATED"] = "CREATED";
+  KernelState["BOOTING"] = "BOOTING";
+  KernelState["BOOTED"] = "BOOTED";
+})(KernelState || (KernelState = {}));
+var ProgramState;
+(function (ProgramState) {
+  ProgramState["IDLE"] = "IDLE";
+  ProgramState["RUNNING"] = "RUNNING";
+  ProgramState["STOPPED"] = "STOPPED";
+  ProgramState["ERROR"] = "ERROR";
+})(ProgramState || (ProgramState = {}));
+
+/***/ },
+
 /***/ "./src/utils.ts"
 /*!**********************!*\
   !*** ./src/utils.ts ***!
@@ -335,13 +432,13 @@ var LoggerLevel;
   LoggerLevel["ERROR"] = "ERROR :: ";
   LoggerLevel["WARNING"] = "WARNING :: ";
 })(LoggerLevel || (LoggerLevel = {}));
-function logger(level, message) {
+function logger(level, message, data = undefined) {
   if (level == LoggerLevel.ERROR) {
-    console.error(LoggerLevel.ERROR, message);
+    console.error(LoggerLevel.ERROR, message, data);
   } else if (level == LoggerLevel.WARNING) {
-    console.warn(LoggerLevel.WARNING, message);
+    console.warn(LoggerLevel.WARNING, message, data);
   } else {
-    console.log(LoggerLevel.LOG, message);
+    console.log(LoggerLevel.LOG, message, data);
   }
 }
 

@@ -8,13 +8,21 @@ window.kernel = new Kernel();
 // Programs
 registerPrograms(window.kernel);
 
-window.kernel.start("my-program");
+window.kernel.onBoot((k) => {
+    k.start("my-program", {
+        message: "Kernel is booted.",
+    });
+})
+
+// window.kernel.start("my-program", {
+//     message: "Message is registered."
+// });
 
 document.getElementById("link-button").addEventListener("click", () => window.kernel.destroy("my-program"));
 
 
 // Events
-window.kernel.once("kernel:test", (e) => {
+window.kernel.on("kernel:test", (e) => {
     console.log("Kernel test event fired :: ", e.detail);
 });
 
@@ -31,4 +39,12 @@ registerRequests(window.kernel);
 
 document.getElementById("trail-button").addEventListener("click", () => {
     window.kernel.send("getposts");
+});
+
+document.getElementById("metrics-button").addEventListener("click", () => {
+    window.kernel.metrics();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    window.kernel.boot();
 });
