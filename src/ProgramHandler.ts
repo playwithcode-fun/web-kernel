@@ -9,6 +9,10 @@ class ProgramHandler {
         //
     }
 
+    isProgramExists(key: string) {
+        return (this.programs.has(key) && this.programState.has(key));
+    }
+
     addProgram(key: string, program: any) {
         if(this.programs.has(key)) {
             logger(LoggerLevel.WARNING, `Program ${key} already exists.`);
@@ -85,7 +89,17 @@ class ProgramHandler {
     }
 
     getAllProgramStatus() {
-        return this.programState;
+        const status: any = {};
+
+        for(const [key, state] of this.programState) {
+            status[key] = state;
+        }
+
+        return status;
+    }
+
+    getProgramStatus(key: string) {
+        return this.programs.get(key);
     }
 }
 

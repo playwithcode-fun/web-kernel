@@ -3,9 +3,13 @@
     "version": "1.0.0",
     "description": "A kernel for web to handle scripting",
     "main": "dist/index.js",
-    "types": "index.d.ts",
+    "types": "dist/index.d.ts",
     "directories": {
         "example": "example"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/thescarletgeek/web-kernel"
     },
     "scripts": {
         "dev": "npm run development",
@@ -16,11 +20,22 @@
         "prod": "npm run production",
         "production": "mix --production"
     },
+    "keywords": [
+        "kernel",
+        "web-kernel",
+        "opensource",
+        "webjs"
+    ],
+    "private": "false",
     "author": "",
     "license": "MIT",
     "devDependencies": {
         "laravel-mix": "^6.0.49",
         "ts-loader": "^9.5.4",
         "typescript": "^5.9.3"
+    },
+    "homepage": "https://github.com/thescarletgeek/web-kernel",
+    "bugs": {
+        "url": "https://github.com/thescarletgeek/web-kernel/issues"
     }
 }

@@ -82,7 +82,7 @@ class Kernel {
         this.requestHandler.startRequest(key);
     }
 
-    metrics() {
+    status() {
         const data: any = {};
 
         data["programs"] = this.programHandler.getAllProgramStatus();

@@ -4,6 +4,10 @@ export default class GetPosts extends Request {
     get url() {
         return "https://jsonplaceholder.typicode.com/posts";
     }
+
+    get method() {
+        return "GET";
+    }
     
     onProcessing() {
         console.log("Get posts is processing");
