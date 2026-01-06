@@ -1,6 +1,6 @@
 {
     "name": "@scarletgeek/web-kernel",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A kernel for web to handle scripting",
     "main": "src/index.js",
     "directories": {
