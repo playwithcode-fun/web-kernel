@@ -1,4 +1,4 @@
-import { Request } from "/dist/index.js";
+import { Request } from "/src/index.js";
 
 export default class GetPosts extends Request {
     get url() {

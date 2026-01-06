@@ -1,6 +1,6 @@
 import { registerPrograms } from "./programs/register.js";
 import { registerRequests } from "./requests/register.js";
-import { Kernel } from "/dist/index.js";
+import { Kernel } from "/src/index.js";
 
 // Initiate kernel
 window.kernel = new Kernel();
@@ -42,7 +42,7 @@ document.getElementById("trail-button").addEventListener("click", () => {
 });
 
 document.getElementById("metrics-button").addEventListener("click", () => {
-    window.kernel.metrics();
+    window.kernel.status();
 });
 
 document.addEventListener("DOMContentLoaded", () => {

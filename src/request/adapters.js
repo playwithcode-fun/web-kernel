@@ -1,6 +1,6 @@
-import { FetchRequestConfig, RequestMethods } from "./interfaces";
+import { RequestMethods } from "../utils.js";
 
-export function fetchAdapter(config: FetchRequestConfig): Promise<Response> {
+export function fetchAdapter(config) {
     return fetch(config.url, {
         method: config.method || RequestMethods.GET,
         headers: config.headers,
